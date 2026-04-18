@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { motion } from 'framer-motion'
-import { RefreshCw, FileText, Sparkles, AlertTriangle } from 'lucide-react'
+import { RefreshCw, FileText, Sparkles, AlertTriangle, ShieldCheck, ShieldAlert } from 'lucide-react'
 import MetadataCard from './cards/MetadataCard'
 import CertificateCard from './cards/CertificateCard'
 import PermissionsCard from './cards/PermissionsCard'
@@ -9,12 +9,17 @@ import CodePatternsCard from './cards/CodePatternsCard'
 import ReputationCard from './cards/ReputationCard'
 
 const reveal = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 28 },
   visible: (i) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.55, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] },
   }),
+}
+
+const cardHover = {
+  y: -3,
+  transition: { type: 'spring', stiffness: 300, damping: 22 },
 }
 
 function extractCertOrg(certificate) {
@@ -31,6 +36,55 @@ function extractCertOrg(certificate) {
   return null
 }
 
+function PrintHeader({ data, verdict }) {
+  const level = verdict?.level || 'SUSPICIOUS'
+  const color = level === 'MALICIOUS' ? '#ef3b3b' : level === 'CLEAN' ? '#16a34a' : '#f59e0b'
+  const VerdictIcon = level === 'CLEAN' ? ShieldCheck : level === 'MALICIOUS' ? AlertTriangle : ShieldAlert
+  return (
+    <div
+      className="ds-print-header"
+      style={{
+        display: 'none',
+        padding: '0 0 20px 0',
+        marginBottom: '24px',
+        borderBottom: '2px solid #d1d5db',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+        <div>
+          <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.03em', color: '#0a0f1c' }}>
+            Droid Sentinel
+          </div>
+          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Android Security Intelligence Report
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', fontSize: '11px', color: '#64748b' }}>
+          <div style={{ fontWeight: 600, color: '#0a0f1c' }}>
+            {data?.metadata?.app_name || data?.filename || 'APK Report'}
+          </div>
+          <div style={{ fontFamily: 'monospace', marginTop: '2px' }}>
+            {data?.metadata?.package_name || ''}
+          </div>
+          <div style={{ marginTop: '4px' }}>
+            {new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: '16px', padding: '12px 16px', borderRadius: '12px', background: '#f7f8fa', border: `2px solid ${color}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ fontWeight: 800, fontSize: '22px', color }}>
+          {verdict?.risk_score ?? 0}<span style={{ fontSize: '12px', fontWeight: 400, color: '#64748b' }}>/100</span>
+        </div>
+        <div style={{ width: '1px', height: '32px', background: '#d1d5db' }} />
+        <div>
+          <div style={{ fontWeight: 700, fontSize: '16px', color }}>{level}</div>
+          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{verdict?.summary?.slice(0, 120)}…</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ResultsDashboard = forwardRef(function ResultsDashboard(
   { data, onReset, onExport },
   ref
@@ -39,16 +93,18 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
   const certOrg = extractCertOrg(data.certificate)
   const verdict = data.verdict || {}
   const reputation = data.reputation
-  const hasReputation =
-    !!reputation && !!reputation.play_store
+  const hasReputation = !!reputation && !!reputation.play_store
 
   return (
     <div ref={ref} className="max-w-7xl mx-auto px-5 sm:px-8 py-10 ds-report-root">
+      {/* Print-only header */}
+      <PrintHeader data={data} verdict={verdict} />
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8"
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 ds-no-print"
       >
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -70,7 +126,7 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2 ds-no-print">
+        <div className="flex items-center gap-2">
           {onExport && (
             <motion.button
               whileHover={{ y: -1 }}
@@ -138,8 +194,10 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
         <motion.div
           custom={0}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
+          whileHover={cardHover}
           className="mb-5"
         >
           <ReputationCard
@@ -156,8 +214,10 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
           className="lg:col-span-2"
           custom={1}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
+          whileHover={cardHover}
         >
           <MetadataCard metadata={data.metadata} />
         </motion.div>
@@ -166,8 +226,10 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
           className="lg:col-span-1"
           custom={2}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
+          whileHover={cardHover}
         >
           <CertificateCard certificate={data.certificate} />
         </motion.div>
@@ -176,8 +238,10 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
           className="lg:col-span-2"
           custom={3}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
+          whileHover={cardHover}
         >
           <PermissionsCard manifest={data.manifest} />
         </motion.div>
@@ -186,8 +250,10 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
           className="lg:col-span-1"
           custom={4}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
+          whileHover={cardHover}
         >
           <URLsCard urls={data.urls} />
         </motion.div>
@@ -196,8 +262,10 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
           className="lg:col-span-3"
           custom={5}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
+          whileHover={cardHover}
         >
           <CodePatternsCard codePatterns={data.code_patterns} />
         </motion.div>
@@ -207,26 +275,39 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
         <motion.div
           custom={6}
           initial="hidden"
-          animate="visible"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-40px' }}
           variants={reveal}
-          className="mt-6 ds-card p-6"
+          className="mt-5 ds-card p-6"
           style={{ borderRadius: '22px' }}
         >
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="ds-eyebrow">Consolidated findings</p>
               <h3 className="text-lg font-semibold ds-text mt-1">
-                {verdict.key_findings.length} evidence points correlated
+                {verdict.key_findings.length} evidence point{verdict.key_findings.length !== 1 ? 's' : ''} correlated
               </h3>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {verdict.key_findings.map((f, i) => (
-              <div
+              <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                 className="p-4 rounded-xl ds-surface-alt"
                 style={{
-                  border: '1px solid var(--ds-border)',
+                  border: `1px solid ${
+                    f.severity === 'critical'
+                      ? 'color-mix(in srgb, var(--ds-red) 22%, var(--ds-border))'
+                      : f.severity === 'high'
+                      ? 'color-mix(in srgb, var(--ds-orange) 22%, var(--ds-border))'
+                      : f.severity === 'info'
+                      ? 'color-mix(in srgb, var(--ds-green) 22%, var(--ds-border))'
+                      : 'var(--ds-border)'
+                  }`,
                 }}
               >
                 <div className="flex items-center gap-2 mb-1.5">
@@ -235,15 +316,12 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
                   >
                     {f.severity}
                   </span>
-                  <span className="text-[11px] ds-text-soft uppercase tracking-wider">
-                    {f.category}
-                  </span>
                 </div>
                 <p className="text-sm font-semibold ds-text">{f.title}</p>
                 <p className="text-xs ds-text-muted mt-1 leading-relaxed">
                   {f.description}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>

@@ -1,9 +1,77 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { ShieldCheck, Radar, Zap, ArrowRight } from 'lucide-react'
 import { useTheme } from '../theme.jsx'
 import androidGuyBlack from '../../../androidguyblack.png'
 import androidGuyWhite from '../../../androidguywhite.png'
+
+function FloatingParticles() {
+  const particles = useMemo(() => Array.from({ length: 18 }, (_, i) => ({
+    id: i,
+    x: 5 + Math.random() * 90,
+    y: 5 + Math.random() * 90,
+    size: 1.5 + Math.random() * 3,
+    duration: 6 + Math.random() * 10,
+    delay: Math.random() * 6,
+    driftX: (Math.random() - 0.5) * 40,
+    driftY: -20 - Math.random() * 40,
+  })), [])
+  return (
+    <div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            background: 'var(--ds-accent)',
+          }}
+          animate={{
+            x: [0, p.driftX, p.driftX * 0.6, 0],
+            y: [0, p.driftY, p.driftY * 1.4, 0],
+            opacity: [0, 0.6, 0.4, 0],
+            scale: [0.5, 1.2, 0.8, 0.5],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function RadarRings() {
+  return (
+    <div aria-hidden className="absolute right-[8%] top-[15%] pointer-events-none w-48 h-48 sm:w-64 sm:h-64 opacity-20">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute inset-0 rounded-full"
+          style={{ border: '1px solid var(--ds-accent)' }}
+          initial={{ scale: 0.3, opacity: 0 }}
+          animate={{ scale: [0.3, 1.2], opacity: [0.8, 0] }}
+          transition={{
+            duration: 3,
+            delay: i * 1,
+            repeat: Infinity,
+            ease: 'easeOut',
+          }}
+        />
+      ))}
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        style={{ border: '1px solid var(--ds-accent)', opacity: 0.35 }}
+      />
+    </div>
+  )
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -57,6 +125,8 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
         aria-hidden
         className="absolute inset-0 ds-grid-bg pointer-events-none opacity-60"
       />
+      <FloatingParticles />
+      <RadarRings />
 
       {/* Ambient orbital glow — reacts to mouse */}
       <motion.div

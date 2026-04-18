@@ -1,11 +1,6 @@
 import { motion } from 'framer-motion'
 import { Globe, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
-function short(url, max = 50) {
-  if (!url || url.length <= max) return url
-  return url.slice(0, max) + '…'
-}
-
 function shortFile(file) {
   if (!file) return file
   const parts = file.split('/')
@@ -56,10 +51,10 @@ export default function URLsCard({ urls }) {
             <AlertTriangle className="w-3.5 h-3.5" />
             <span className="text-xs font-semibold">Raw IP endpoints ({ips.length})</span>
           </div>
-          {ips.slice(0, 3).map((ip, i) => (
+          {ips.map((ip, i) => (
             <div
               key={i}
-              className="ds-mono text-[11px] ds-surface-mute ds-text px-2 py-1 rounded mb-1 last:mb-0 truncate"
+              className="ds-mono text-[11px] ds-surface-mute ds-text px-2 py-1 rounded mb-1 last:mb-0 break-all"
               title={ip}
             >
               {ip}
@@ -82,7 +77,7 @@ export default function URLsCard({ urls }) {
         </div>
       ) : (
         <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-          {sorted.slice(0, 25).map((u, i) => (
+          {sorted.map((u, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -4 }}
@@ -93,8 +88,8 @@ export default function URLsCard({ urls }) {
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="ds-mono text-xs truncate max-w-[220px]" title={u.url}>
-                      {short(u.url)}
+                    <span className="ds-mono text-xs break-all" title={u.url}>
+                      {u.url}
                     </span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-medium capitalize">
                       {u.risk_level}
@@ -114,11 +109,6 @@ export default function URLsCard({ urls }) {
               </div>
             </motion.div>
           ))}
-          {sorted.length > 25 && (
-            <p className="text-xs ds-text-soft text-center py-2">
-              +{sorted.length - 25} more URLs not shown
-            </p>
-          )}
         </div>
       )}
 

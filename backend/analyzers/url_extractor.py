@@ -202,7 +202,7 @@ def extract_urls(apk_path: str) -> dict:
     risk_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
     unique_classified.sort(key=lambda x: risk_order.get(x["risk_level"], 5))
 
-    result["urls"] = unique_classified[:200]  # Limit for JSON size
+    result["urls"] = unique_classified
     result["total_count"] = len(unique_classified)
 
     suspicious = [u for u in unique_classified if u["risk_level"] in ("critical", "high")]
@@ -212,7 +212,7 @@ def extract_urls(apk_path: str) -> dict:
     ip_urls = [u["url"] for u in unique_classified if IP_PATTERN.match(u["url"])]
     result["ip_addresses"] = ip_urls
 
-    result["unique_domains"] = list(all_domains)[:100]
+    result["unique_domains"] = sorted(all_domains)
 
     # Warnings
     if ip_urls:

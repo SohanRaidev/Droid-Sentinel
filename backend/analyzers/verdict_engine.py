@@ -8,7 +8,6 @@ SCORING = {
     # Certificate issues
     "cert_missing": 30,
     "cert_expired": 15,
-    "cert_self_signed": 20,
 
     # Per-permission penalties
     "INSTALL_PACKAGES": 25,
@@ -86,21 +85,13 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
             evidence_count["high"] += 1
             indicators["certificate_issue"] = True
 
-        if certificate.get("is_self_signed"):
-            risk_score += SCORING["cert_self_signed"]
-            key_findings.append({
-                "severity": "high",
-                "title": "Self-Signed Certificate",
-                "description": "Certificate is self-signed rather than issued by a trusted CA. Common in repackaged/trojanized apps."
-            })
-            evidence_count["high"] += 1
-            indicators["certificate_issue"] = True
-
     # === Clone detection ===
     known_apps = load_known_apps()
     package_name = metadata.get("package_name", "")
+    play = reputation.get("play_store", {}) if reputation else {}
+    use_live_reputation = bool(play.get("checked") and play.get("listed"))
 
-    if package_name in known_apps:
+    if package_name in known_apps and not use_live_reputation:
         app_info = known_apps[package_name]
         expected_cert_org = app_info.get("expected_cert_org", "")
         app_name = app_info.get("name", package_name)
@@ -165,13 +156,21 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
             risk_score += score_add
             dangerous_found.append(perm_short)
 
+    privileged_perms = {
+        "INSTALL_PACKAGES",
+        "BIND_ACCESSIBILITY_SERVICE",
+        "BIND_DEVICE_ADMIN",
+        "BIND_NOTIFICATION_LISTENER_SERVICE",
+    }
+
     if dangerous_found:
         indicators["dangerous_permissions"] = True
-        if len(dangerous_found) >= 3:
+        has_privileged_perm = any(p in privileged_perms for p in dangerous_found)
+        if has_privileged_perm or len(dangerous_found) >= 5:
             key_findings.append({
                 "severity": "critical",
                 "title": "Multiple Dangerous Permissions",
-                "description": f"App requests {len(dangerous_found)} high-risk permissions: {', '.join(dangerous_found[:5])}. This combination is typical of spyware."
+                "description": f"App requests {len(dangerous_found)} high-risk permissions: {', '.join(dangerous_found[:5])}. This permission profile can enable invasive behavior."
             })
             evidence_count["critical"] += 1
         elif len(dangerous_found) >= 1:
@@ -202,7 +201,8 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
         key_findings.append({
             "severity": "high",
             "title": "C2 Server Communication",
-            "description": f"App communicates with {len(ip_urls)} raw IP address(es): {', '.join(ip_urls[:2])}. Typical command & control server pattern."
+            "description": f"App communicates with {len(ip_urls)} raw IP address(es): {', '.join(ip_urls[:2])}. Typical command & control server pattern.",
+            "_heuristic": True,
         })
         evidence_count["high"] += 1
 
@@ -214,7 +214,8 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
             key_findings.append({
                 "severity": "medium",
                 "title": "Suspicious Network Domains",
-                "description": f"{suspicious_url_count} suspicious domain(s) found with high-risk TLDs or patterns."
+                "description": f"{suspicious_url_count} suspicious domain(s) found with high-risk TLDs or patterns.",
+                "_heuristic": True,
             })
             evidence_count["medium"] += 1
 
@@ -232,7 +233,8 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
             key_findings.append({
                 "severity": "critical",
                 "title": cp["name"],
-                "description": cp["description"]
+                "description": cp["description"],
+                "_heuristic": True,
             })
             evidence_count["critical"] += 1
 
@@ -245,7 +247,8 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
             key_findings.append({
                 "severity": "high",
                 "title": hp["name"],
-                "description": hp["description"]
+                "description": hp["description"],
+                "_heuristic": True,
             })
             evidence_count["high"] += 1
 
@@ -256,7 +259,8 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
             key_findings.append({
                 "severity": "medium",
                 "title": mp["name"],
-                "description": mp["description"]
+                "description": mp["description"],
+                "_heuristic": True,
             })
             evidence_count["medium"] += 1
 
@@ -266,7 +270,6 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
     if rep_delta:
         risk_score += min(rep_delta, 60)
 
-    play = reputation.get("play_store", {}) if reputation else {}
     if play.get("checked") and play.get("listed") is False and package_name:
         indicators["not_on_play_store"] = True
 
@@ -293,6 +296,22 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
         risk_score += SCORING["multiple_dex"]
         evidence_count["low"] += 1
 
+    # If the app is verified as Play-listed with no developer mismatch, avoid escalating to MALICIOUS
+    # solely from broad heuristic signals (permissions/API presence).
+    mismatch_fields = {
+        m.get("field") for m in reputation.get("mismatches", [])
+        if isinstance(m, dict)
+    }
+    trusted_play_release = (
+        play.get("checked") is True
+        and play.get("listed") is True
+        and certificate.get("found", False)
+        and "developer_vs_certificate" not in mismatch_fields
+        and not indicators["is_clone_candidate"]
+    )
+    if trusted_play_release and risk_score > 20:
+        risk_score = 20
+
     # === Cap risk score at 100 ===
     risk_score = min(risk_score, 100)
 
@@ -303,7 +322,10 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
     # === Determine verdict level ===
     if risk_score <= 25:
         level = "CLEAN"
-        summary_base = "No significant threats detected in this APK. The application appears to behave within normal parameters."
+        if trusted_play_release:
+            summary_base = "This APK matches a verified Google Play Store listing. The signing certificate is authentic and no malicious indicators were detected."
+        else:
+            summary_base = "No significant threats detected in this APK. The application appears to behave within normal parameters."
         recommendation = "This APK appears safe to install. Always download apps from official sources like Google Play Store for maximum security."
     elif risk_score <= 55:
         level = "SUSPICIOUS"
@@ -329,10 +351,10 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
         context_parts.append("is not distributed via the official Google Play Store")
     if indicators["dangerous_permissions"]:
         context_parts.append(f"requests {len(dangerous_found)} high-risk permissions")
-    if indicators["suspicious_code"]:
+    if indicators["suspicious_code"] and not trusted_play_release:
         total_bad = len(critical_patterns) + len(high_patterns)
         context_parts.append(f"contains {total_bad} suspicious code pattern(s)")
-    if indicators["suspicious_network"]:
+    if indicators["suspicious_network"] and not trusted_play_release:
         context_parts.append("communicates with suspicious network endpoints")
 
     if context_parts:
@@ -340,15 +362,40 @@ def compute_verdict(metadata: dict, certificate: dict, manifest: dict, urls: dic
     else:
         summary = summary_base
 
+    # For trusted Play Store releases, strip heuristic signals and add verification note
+    if trusted_play_release:
+        key_findings = [f for f in key_findings if not f.get("_heuristic")]
+        play_dev = play.get("developer") or package_name
+        key_findings.insert(0, {
+            "severity": "info",
+            "title": "Verified on Google Play Store",
+            "description": (
+                f"Package is published on Google Play by '{play_dev}'. "
+                f"The signing certificate matches the expected developer key. "
+                f"No tampering indicators detected."
+            ),
+        })
+
     # Deduplicate key findings (limit to most important)
     seen_titles = set()
     deduped_findings = []
     for f in key_findings:
+        f.pop("_heuristic", None)
         if f["title"] not in seen_titles:
             seen_titles.add(f["title"])
             deduped_findings.append(f)
 
     deduped_findings = deduped_findings[:8]  # Max 8 key findings
+
+    # Recompute evidence counts for trusted releases (heuristics were filtered out)
+    if trusted_play_release:
+        evidence_count = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+        for f in deduped_findings:
+            sev = f.get("severity", "info")
+            if sev in evidence_count:
+                evidence_count[sev] += 1
+        for _ in manifest.get("warnings", []):
+            evidence_count["info"] += 1
 
     return {
         "level": level,

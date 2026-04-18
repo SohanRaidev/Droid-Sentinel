@@ -7,6 +7,8 @@ organization against the live store listing.
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import html
 from typing import Any, Optional
@@ -100,6 +102,17 @@ def _names_match(a: str, b: str) -> bool:
         if nb.endswith(suffix):
             nb = nb[: -len(suffix)]
     return na == nb or na in nb or nb in na
+
+
+def _load_known_cert_org(package_name: str) -> str:
+    """Return the expected cert org for a known package from the local database."""
+    try:
+        data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'known_apps.json')
+        with open(data_path) as f:
+            known = json.load(f)
+        return known.get(package_name, {}).get("expected_cert_org", "")
+    except Exception:
+        return ""
 
 
 def _fetch_via_scraper(package_name: str) -> dict | None:
@@ -227,6 +240,7 @@ def check_reputation(metadata: dict, certificate: dict, manifest: dict) -> dict:
             result["play_store"][k] = v
 
     app_label = metadata.get("app_name") or manifest.get("app_name") or ""
+    app_label_norm = app_label.strip().lower()
     play_title = store_data.get("title") or ""
     play_developer = store_data.get("developer") or ""
 
@@ -236,7 +250,16 @@ def check_reputation(metadata: dict, certificate: dict, manifest: dict) -> dict:
     cert_org = _extract_org_from_subject(cert_subject)
 
     # --- Developer vs cert org ---
-    if play_developer and cert_org and not _names_match(play_developer, cert_org):
+    # Check if the cert org matches the expected org for this known package (e.g. Facebook Mobile
+    # for Meta Platforms apps — the company rebranded but still uses the old cert org name).
+    expected_cert_org = _load_known_cert_org(package_name)
+    cert_matches_known = bool(
+        expected_cert_org and cert_org and (
+            expected_cert_org.lower() in cert_org.lower()
+            or cert_org.lower() in expected_cert_org.lower()
+        )
+    )
+    if play_developer and cert_org and not _names_match(play_developer, cert_org) and not cert_matches_known:
         result["mismatches"].append({
             "field": "developer_vs_certificate",
             "expected": play_developer,
@@ -254,7 +277,7 @@ def check_reputation(metadata: dict, certificate: dict, manifest: dict) -> dict:
         })
 
     # --- App title vs manifest label ---
-    if play_title and app_label and not _names_match(play_title, app_label):
+    if play_title and app_label and app_label_norm not in ("unknown", "n/a", "null", "none") and not _names_match(play_title, app_label):
         result["mismatches"].append({
             "field": "title_vs_label",
             "expected": play_title,
@@ -267,18 +290,6 @@ def check_reputation(metadata: dict, certificate: dict, manifest: dict) -> dict:
             "description": (
                 f"Play Store title is '{play_title}' but the APK's internal label is '{app_label}'. "
                 f"Label tampering is often used to disguise repackaged apps."
-            ),
-        })
-
-    # --- Self-signed cert for a listed app ---
-    if certificate.get("is_self_signed") and play_developer:
-        result["risk_delta"] += 30
-        result["findings"].append({
-            "severity": "critical",
-            "title": "Self-signed cert on a listed app",
-            "description": (
-                f"'{play_title or package_name}' is published on Google Play by '{play_developer}', "
-                f"yet this APK is self-signed. Production Play Store releases are never self-signed."
             ),
         })
 

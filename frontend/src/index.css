@@ -354,59 +354,129 @@ body {
    ------------------------------------------------------------------------- */
 @page {
   size: A4;
-  margin: 14mm 12mm;
+  margin: 12mm 14mm;
 }
 
 @media print {
   html, body {
     background: #ffffff !important;
     color: #0a0f1c !important;
-  }
-  html.dark {
-    --ds-bg: #ffffff;
-    --ds-bg-elev: #ffffff;
-    --ds-surface: #ffffff;
-    --ds-surface-alt: #f7f8fa;
-    --ds-surface-mute: #eef0f3;
-    --ds-border: rgba(15, 23, 42, 0.18);
-    --ds-border-strong: rgba(15, 23, 42, 0.28);
-    --ds-text: #0a0f1c;
-    --ds-text-muted: #475569;
-    --ds-text-soft: #64748b;
-    --ds-accent: #0a66ff;
-    --ds-accent-soft: rgba(10, 102, 255, 0.08);
+    font-size: 13px !important;
   }
 
-  nav,
-  .ds-no-print,
-  button {
+  /* Force light-mode tokens for print */
+  :root, html.dark {
+    --ds-bg: #ffffff !important;
+    --ds-bg-elev: #ffffff !important;
+    --ds-surface: #ffffff !important;
+    --ds-surface-alt: #f7f8fa !important;
+    --ds-surface-mute: #eef0f3 !important;
+    --ds-border: rgba(15, 23, 42, 0.14) !important;
+    --ds-border-strong: rgba(15, 23, 42, 0.24) !important;
+    --ds-text: #0a0f1c !important;
+    --ds-text-muted: #475569 !important;
+    --ds-text-soft: #64748b !important;
+    --ds-accent: #0a66ff !important;
+    --ds-accent-soft: rgba(10, 102, 255, 0.08) !important;
+    --ds-red: #dc2626 !important;
+    --ds-orange: #d97706 !important;
+    --ds-amber: #b45309 !important;
+    --ds-green: #15803d !important;
+  }
+
+  /* Hide interactive elements */
+  nav, .ds-no-print, button {
     display: none !important;
   }
 
-  .ds-card,
-  .ds-surface,
-  .ds-surface-alt,
-  .ds-glass {
+  /* Show print-only header */
+  .ds-print-header {
+    display: block !important;
+  }
+
+  /* Cards */
+  .ds-card {
     background: #ffffff !important;
     border: 1px solid #d1d5db !important;
     box-shadow: none !important;
-    page-break-inside: avoid;
     break-inside: avoid;
   }
 
+  .ds-surface-alt {
+    background: #f7f8fa !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .ds-glass {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+  }
+
+  /* Severity badges preserve color in print */
+  .sev-critical {
+    color: #dc2626 !important;
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .sev-high {
+    color: #d97706 !important;
+    background: #fffbeb !important;
+    border: 1px solid #fde68a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .sev-medium {
+    color: #b45309 !important;
+    background: #fefce8 !important;
+    border: 1px solid #fef08a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .sev-low {
+    color: #15803d !important;
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .sev-info {
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  /* Page layout */
   .ds-report-root {
     padding-top: 0 !important;
+    padding-bottom: 0 !important;
     max-width: none !important;
   }
+
+  /* Page breaks */
+  h1, h2, h3, .ds-eyebrow { page-break-after: avoid; break-after: avoid; }
+  .ds-card { page-break-inside: avoid; break-inside: avoid; }
+  .grid { break-inside: auto; }
+  .grid > * { break-inside: avoid; }
+
+  /* Remove decorative backgrounds */
+  [style*="radial-gradient"] { background: none !important; }
+  [style*="linear-gradient"][aria-hidden] { display: none !important; }
 
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    animation: none !important;
+    transition: none !important;
   }
 
   img { max-width: 100% !important; }
   a { color: inherit !important; text-decoration: none !important; }
-  h1, h2, h3 { page-break-after: avoid; }
 }
 
 /* Remove tap highlight on mobile */
