@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react'
 import RiskGauge from './RiskGauge'
+import errorImage from '../../../error.png'
 
 const VERDICT = {
   MALICIOUS: {
@@ -57,7 +58,7 @@ export default function VerdictBanner({ verdict, filename }) {
           />
 
           <div className="flex flex-col lg:flex-row items-start gap-8 relative">
-            <div className="flex items-center gap-5 lg:min-w-[260px]">
+            <div className="flex flex-col items-start gap-4 lg:min-w-[260px]">
               <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{
@@ -77,6 +78,15 @@ export default function VerdictBanner({ verdict, filename }) {
                 <div className="text-sm ds-text-muted mt-0.5 break-all">
                   {filename || 'Analysis complete'}
                 </div>
+                {level === 'MALICIOUS' && (
+                  <img
+                    src={errorImage}
+                    alt=""
+                    aria-hidden
+                    className="mt-3 w-44 h-44 object-contain pointer-events-none select-none"
+                    style={{ opacity: 0.5 }}
+                  />
+                )}
               </div>
             </div>
 
