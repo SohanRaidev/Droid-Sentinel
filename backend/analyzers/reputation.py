@@ -5,9 +5,11 @@ and cross-validates the app's identity, developer, and signing certificate
 organization against the live store listing.
 """
 
+from __future__ import annotations
+
 import re
 import html
-from typing import Any
+from typing import Any, Optional
 from urllib.parse import quote
 
 import httpx

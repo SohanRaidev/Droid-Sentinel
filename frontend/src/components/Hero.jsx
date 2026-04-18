@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion'
 import { ShieldCheck, Radar, Zap, ArrowRight } from 'lucide-react'
+import { useTheme } from '../theme.jsx'
+import androidGuyBlack from '../../../androidguyblack.png'
+import androidGuyWhite from '../../../androidguywhite.png'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -12,6 +15,9 @@ const stagger = {
 }
 
 export default function Hero({ onPrimaryClick, onSecondaryClick }) {
+  const { theme } = useTheme()
+  const heroArt = theme === 'dark' ? androidGuyWhite : androidGuyBlack
+
   return (
     <section
       id="overview"
@@ -20,6 +26,13 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
       <div
         aria-hidden
         className="absolute inset-0 ds-grid-bg pointer-events-none opacity-60"
+      />
+      <img
+        src={heroArt}
+        alt=""
+        aria-hidden
+        className="absolute right-[-8rem] top-1/2 -translate-y-1/2 w-[min(62vw,900px)] max-w-none pointer-events-none select-none"
+        style={{ opacity: 0.08 }}
       />
 
       <div className="relative max-w-6xl mx-auto px-5 sm:px-8">

@@ -42,28 +42,13 @@ export default function Navbar({ onReset, phase, onAnalyze, onExport }) {
         borderBottom: scrolled ? '1px solid var(--ds-border)' : '1px solid transparent',
       }}
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-24 flex items-center justify-between">
         <button
           onClick={onReset}
-          className="flex items-center gap-2.5 group"
+          className="flex items-center group"
           aria-label="Droid Sentinel home"
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden"
-            style={{
-              background: 'var(--ds-surface)',
-              border: '1px solid var(--ds-border)',
-              boxShadow: 'var(--ds-shadow-sm)',
-            }}
-          >
-            <img src="/logo.png" alt="Droid Sentinel" className="w-7 h-7 object-contain" />
-          </div>
-          <div className="hidden sm:flex flex-col leading-none">
-            <span className="text-[15px] font-semibold tracking-tight ds-text">Droid Sentinel</span>
-            <span className="text-[10px] uppercase tracking-[0.18em] ds-text-soft mt-0.5">
-              Threat Intelligence
-            </span>
-          </div>
+          <img src="/logo.png" alt="Droid Sentinel" className="w-40 h-40 object-contain" />
         </button>
 
         {phase === 'upload' && (

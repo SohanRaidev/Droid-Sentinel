@@ -6,5 +6,8 @@
       "Bash(npm --version)",
       "Bash(node_modules/.bin/vite build *)"
     ]
+  },
+  "enabledPlugins": {
+    "caveman@caveman": true
   }
 }
