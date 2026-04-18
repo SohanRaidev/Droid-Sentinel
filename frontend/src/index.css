@@ -1,0 +1,413 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* -------------------------------------------------------------------------
+   Design tokens — light-first, Apple-inspired
+   ------------------------------------------------------------------------- */
+:root {
+  --ds-bg: #fafafa;
+  --ds-bg-elev: #ffffff;
+  --ds-surface: #ffffff;
+  --ds-surface-alt: #f5f6f8;
+  --ds-surface-mute: #eef0f3;
+  --ds-border: rgba(15, 23, 42, 0.08);
+  --ds-border-strong: rgba(15, 23, 42, 0.14);
+  --ds-text: #0a0f1c;
+  --ds-text-muted: #5b6472;
+  --ds-text-soft: #8a93a3;
+  --ds-accent: #0a66ff;
+  --ds-accent-soft: rgba(10, 102, 255, 0.08);
+  --ds-ring: rgba(10, 102, 255, 0.25);
+
+  --ds-red: #ef3b3b;
+  --ds-orange: #f59e0b;
+  --ds-amber: #eab308;
+  --ds-green: #16a34a;
+  --ds-purple: #8b5cf6;
+
+  --ds-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --ds-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --ds-shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.14);
+  --ds-shadow-accent: 0 16px 40px rgba(10, 102, 255, 0.22);
+
+  --ds-gradient-hero: radial-gradient(1200px 600px at 50% -20%, rgba(10, 102, 255, 0.12), transparent 60%),
+                      radial-gradient(800px 500px at 90% 10%, rgba(139, 92, 246, 0.08), transparent 60%),
+                      radial-gradient(700px 400px at 10% 20%, rgba(22, 163, 74, 0.06), transparent 60%);
+}
+
+html.dark {
+  --ds-bg: #070a13;
+  --ds-bg-elev: #0b0f1c;
+  --ds-surface: #0f1423;
+  --ds-surface-alt: #131a2c;
+  --ds-surface-mute: #1a2238;
+  --ds-border: rgba(255, 255, 255, 0.08);
+  --ds-border-strong: rgba(255, 255, 255, 0.14);
+  --ds-text: #f5f7fb;
+  --ds-text-muted: #9aa4b6;
+  --ds-text-soft: #6c7689;
+  --ds-accent: #5e8eff;
+  --ds-accent-soft: rgba(94, 142, 255, 0.12);
+  --ds-ring: rgba(94, 142, 255, 0.35);
+
+  --ds-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ds-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --ds-shadow-lg: 0 25px 60px rgba(0, 0, 0, 0.55);
+  --ds-shadow-accent: 0 20px 50px rgba(94, 142, 255, 0.3);
+
+  --ds-gradient-hero: radial-gradient(1200px 600px at 50% -20%, rgba(94, 142, 255, 0.18), transparent 60%),
+                      radial-gradient(900px 500px at 90% 10%, rgba(139, 92, 246, 0.12), transparent 60%),
+                      radial-gradient(700px 400px at 10% 20%, rgba(22, 163, 74, 0.08), transparent 60%);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--ds-bg);
+}
+
+body {
+  background: var(--ds-bg);
+  color: var(--ds-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  font-feature-settings: 'ss01', 'cv11';
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* -------------------------------------------------------------------------
+   Scrollbar
+   ------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ds-border-strong);
+  border-radius: 10px;
+  border: 2px solid var(--ds-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-text-soft);
+}
+
+/* -------------------------------------------------------------------------
+   Utility classes bound to tokens
+   ------------------------------------------------------------------------- */
+.ds-surface {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+}
+.ds-surface-alt {
+  background: var(--ds-surface-alt);
+  border: 1px solid var(--ds-border);
+}
+.ds-surface-mute {
+  background: var(--ds-surface-mute);
+}
+.ds-text { color: var(--ds-text); }
+.ds-text-muted { color: var(--ds-text-muted); }
+.ds-text-soft { color: var(--ds-text-soft); }
+.ds-border { border-color: var(--ds-border); }
+.ds-border-strong { border-color: var(--ds-border-strong); }
+.ds-accent { color: var(--ds-accent); }
+.ds-bg { background: var(--ds-bg); }
+
+.ds-card {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: 24px;
+  box-shadow: var(--ds-shadow-sm);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+.ds-card:hover {
+  box-shadow: var(--ds-shadow);
+  border-color: var(--ds-border-strong);
+}
+
+.ds-btn-primary {
+  background: var(--ds-text);
+  color: var(--ds-bg);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.75rem 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, opacity 0.2s ease;
+  box-shadow: var(--ds-shadow-sm);
+}
+.ds-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ds-shadow);
+}
+.ds-btn-primary:active {
+  transform: translateY(0);
+}
+
+.ds-btn-ghost {
+  background: transparent;
+  color: var(--ds-text);
+  font-weight: 500;
+  border-radius: 999px;
+  padding: 0.6rem 1.25rem;
+  border: 1px solid var(--ds-border);
+  transition: all 0.2s ease;
+}
+.ds-btn-ghost:hover {
+  background: var(--ds-surface-alt);
+  border-color: var(--ds-border-strong);
+}
+
+/* -------------------------------------------------------------------------
+   Typography helpers
+   ------------------------------------------------------------------------- */
+.ds-title {
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  color: var(--ds-text);
+}
+
+.ds-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ds-accent);
+}
+
+.ds-gradient-text {
+  background: linear-gradient(135deg, var(--ds-text) 0%, var(--ds-text-muted) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ds-accent-gradient-text {
+  background: linear-gradient(120deg, #0a66ff 0%, #8b5cf6 50%, #16a34a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: hue-drift 12s ease-in-out infinite;
+}
+
+@keyframes hue-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.ds-mono {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-feature-settings: 'ss02', 'cv01';
+  font-size: 0.82em;
+}
+
+/* -------------------------------------------------------------------------
+   Hero background
+   ------------------------------------------------------------------------- */
+.ds-hero-bg {
+  background-image: var(--ds-gradient-hero);
+}
+
+.ds-grid-bg {
+  background-image: linear-gradient(var(--ds-border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--ds-border) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse at 50% 50%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 0%, transparent 70%);
+}
+
+/* -------------------------------------------------------------------------
+   Selection + focus ring
+   ------------------------------------------------------------------------- */
+::selection {
+  background: var(--ds-accent);
+  color: white;
+}
+:focus-visible {
+  outline: 2px solid var(--ds-ring);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------------
+   Severity badges (semantic, theme-aware)
+   ------------------------------------------------------------------------- */
+.sev-critical {
+  color: var(--ds-red);
+  background: color-mix(in srgb, var(--ds-red) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ds-red) 25%, transparent);
+}
+.sev-high {
+  color: var(--ds-orange);
+  background: color-mix(in srgb, var(--ds-orange) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ds-orange) 25%, transparent);
+}
+.sev-medium {
+  color: var(--ds-amber);
+  background: color-mix(in srgb, var(--ds-amber) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ds-amber) 28%, transparent);
+}
+.sev-low {
+  color: var(--ds-green);
+  background: color-mix(in srgb, var(--ds-green) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ds-green) 22%, transparent);
+}
+.sev-info {
+  color: var(--ds-text-muted);
+  background: var(--ds-surface-alt);
+  border: 1px solid var(--ds-border);
+}
+.sev-unknown {
+  color: var(--ds-purple);
+  background: color-mix(in srgb, var(--ds-purple) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ds-purple) 22%, transparent);
+}
+
+/* -------------------------------------------------------------------------
+   Motion primitives
+   ------------------------------------------------------------------------- */
+@keyframes ds-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(2.2);  opacity: 0; }
+}
+.ds-pulse-ring { animation: ds-pulse-ring 2s ease-out infinite; }
+
+@keyframes ds-scan {
+  0%   { top: 0%;  opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.ds-scan-line { animation: ds-scan 2.2s linear infinite; }
+
+@keyframes ds-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.ds-orbit { animation: ds-orbit 4s linear infinite; }
+
+@keyframes ds-float {
+  0%, 100% { transform: translate3d(0,0,0); }
+  50%      { transform: translate3d(0,-10px,0); }
+}
+.ds-float { animation: ds-float 6s ease-in-out infinite; }
+
+@keyframes ds-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.ds-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--ds-text) 6%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: ds-shimmer 2.2s linear infinite;
+}
+
+/* Shine sweep for hero */
+@keyframes ds-shine {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%)  skewX(-18deg); }
+}
+.ds-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  animation: ds-shine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------
+   Glass & borders
+   ------------------------------------------------------------------------- */
+.ds-glass {
+  background: color-mix(in srgb, var(--ds-surface) 80%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--ds-border);
+}
+
+/* -------------------------------------------------------------------------
+   App root
+   ------------------------------------------------------------------------- */
+.ds-app-root {
+  background: var(--ds-bg);
+  color: var(--ds-text);
+}
+
+/* -------------------------------------------------------------------------
+   Print styles for the detailed report
+   ------------------------------------------------------------------------- */
+@page {
+  size: A4;
+  margin: 14mm 12mm;
+}
+
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #0a0f1c !important;
+  }
+  html.dark {
+    --ds-bg: #ffffff;
+    --ds-bg-elev: #ffffff;
+    --ds-surface: #ffffff;
+    --ds-surface-alt: #f7f8fa;
+    --ds-surface-mute: #eef0f3;
+    --ds-border: rgba(15, 23, 42, 0.18);
+    --ds-border-strong: rgba(15, 23, 42, 0.28);
+    --ds-text: #0a0f1c;
+    --ds-text-muted: #475569;
+    --ds-text-soft: #64748b;
+    --ds-accent: #0a66ff;
+    --ds-accent-soft: rgba(10, 102, 255, 0.08);
+  }
+
+  nav,
+  .ds-no-print,
+  button {
+    display: none !important;
+  }
+
+  .ds-card,
+  .ds-surface,
+  .ds-surface-alt,
+  .ds-glass {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .ds-report-root {
+    padding-top: 0 !important;
+    max-width: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  img { max-width: 100% !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+}
+
+/* Remove tap highlight on mobile */
+* { -webkit-tap-highlight-color: transparent; }
