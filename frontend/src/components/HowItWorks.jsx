@@ -6,7 +6,7 @@ const STEPS = [
     icon: Upload,
     title: 'Drop in an APK',
     description:
-      'Drag and drop an .apk up to 100 MB, or point Droid Sentinel at a Play Store package name. Nothing is ever executed.',
+      'Drag and drop an .apk up to 2 GB, or point Droid Sentinel at a Play Store package name. Nothing is ever executed.',
   },
   {
     icon: Cpu,

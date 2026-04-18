@@ -165,7 +165,7 @@ export default function UploadZone({ onUpload, onDemo, error }) {
                     <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6">
                       <p className="text-xl font-semibold ds-text">Drop your APK here</p>
                       <p className="mt-1 text-sm ds-text-muted">
-                        or <span className="ds-accent font-medium">click to browse</span> · up to 100 MB
+                        or <span className="ds-accent font-medium">click to browse</span> · up to 2 GB
                       </p>
                     </motion.div>
                   )}

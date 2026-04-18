@@ -62,13 +62,21 @@ def _empty_result(package_name: str, reason: str = "") -> dict:
 
 
 def _extract_org_from_subject(subject: str) -> str:
-    """Pull the O=... value out of a cert subject string."""
+    """Pull the O=... / Organization: ... value out of a cert subject string."""
     if not subject:
         return ""
-    m = re.search(r"O=([^,]+)", subject)
+    # androguard human_friendly format: "Common Name: Foo, Organization: Bar, ..."
+    m = re.search(r"Organization:\s*([^,]+)", subject, re.IGNORECASE)
     if m:
         return m.group(1).strip()
-    m = re.search(r"CN=([^,]+)", subject)
+    # Standard X.500 DN format: "O=Bar, CN=Foo, ..."
+    m = re.search(r"\bO=([^,]+)", subject)
+    if m:
+        return m.group(1).strip()
+    m = re.search(r"Common Name:\s*([^,]+)", subject, re.IGNORECASE)
+    if m:
+        return m.group(1).strip()
+    m = re.search(r"\bCN=([^,]+)", subject)
     if m:
         return m.group(1).strip()
     return ""

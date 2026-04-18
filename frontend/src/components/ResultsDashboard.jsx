@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { motion } from 'framer-motion'
-import { RefreshCw, FileText, Sparkles } from 'lucide-react'
+import { RefreshCw, FileText, Sparkles, AlertTriangle } from 'lucide-react'
 import MetadataCard from './cards/MetadataCard'
 import CertificateCard from './cards/CertificateCard'
 import PermissionsCard from './cards/PermissionsCard'
@@ -20,9 +20,13 @@ const reveal = {
 function extractCertOrg(certificate) {
   const subject = certificate?.certificates?.[0]?.subject
   if (!subject) return null
-  const o = /O=([^,]+)/i.exec(subject)
+  const org = /Organization:\s*([^,]+)/i.exec(subject)
+  if (org) return org[1].trim()
+  const o = /\bO=([^,]+)/.exec(subject)
   if (o) return o[1].trim()
-  const cn = /CN=([^,]+)/i.exec(subject)
+  const cnFriendly = /Common Name:\s*([^,]+)/i.exec(subject)
+  if (cnFriendly) return cnFriendly[1].trim()
+  const cn = /\bCN=([^,]+)/.exec(subject)
   if (cn) return cn[1].trim()
   return null
 }
@@ -35,7 +39,8 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
   const certOrg = extractCertOrg(data.certificate)
   const verdict = data.verdict || {}
   const reputation = data.reputation
-  const hasReputation = !!reputation && reputation.checked !== undefined
+  const hasReputation =
+    !!reputation && !!reputation.play_store
 
   return (
     <div ref={ref} className="max-w-7xl mx-auto px-5 sm:px-8 py-10 ds-report-root">
@@ -89,6 +94,45 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
           </motion.button>
         </div>
       </motion.div>
+
+      {Array.isArray(data.warnings) && data.warnings.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="mb-5 p-4 rounded-2xl flex gap-3"
+          style={{
+            background: 'color-mix(in srgb, var(--ds-orange) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--ds-orange) 30%, var(--ds-border))',
+          }}
+        >
+          <AlertTriangle
+            className="w-5 h-5 flex-shrink-0 mt-0.5"
+            style={{ color: 'var(--ds-orange)' }}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold ds-text">
+              {data.warnings.length === 1
+                ? '1 analyzer returned a partial result'
+                : `${data.warnings.length} analyzers returned partial results`}
+            </p>
+            <p className="text-xs ds-text-muted mt-1 leading-relaxed">
+              Other evidence below is still accurate. The verdict reflects only what was
+              successfully parsed.
+            </p>
+            <details className="mt-2 text-xs ds-text-soft ds-mono">
+              <summary className="cursor-pointer hover:ds-text-muted">
+                Show analyzer diagnostics
+              </summary>
+              <ul className="mt-2 space-y-1 pl-1">
+                {data.warnings.map((w, i) => (
+                  <li key={i} className="break-words">• {w}</li>
+                ))}
+              </ul>
+            </details>
+          </div>
+        </motion.div>
+      )}
 
       {hasReputation && (
         <motion.div

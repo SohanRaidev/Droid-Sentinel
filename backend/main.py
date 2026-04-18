@@ -7,6 +7,108 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI(title="Droid Sentinel API", version="1.0.0")
 
+DEMO_APK_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "samples", "WhatsApp_Fake_v2.22.apk"
+)
+
+
+def _run_pipeline(apk_path: str, display_filename: str) -> dict:
+    """Run the full analyzer pipeline on an APK file on disk."""
+    errors: list[str] = []
+
+    try:
+        from analyzers.metadata_extractor import extract_metadata
+        metadata = extract_metadata(apk_path, display_filename)
+    except Exception as e:
+        errors.append(f"Metadata extraction failed: {e}")
+        metadata = {
+            "filename": display_filename, "file_size": 0, "file_size_human": "0 B",
+            "hashes": {"md5": "", "sha1": "", "sha256": ""},
+            "package_name": "unknown", "app_name": "Unknown",
+            "version_name": "Unknown", "version_code": "Unknown",
+            "min_sdk": "Unknown", "target_sdk": "Unknown",
+            "dex_count": 0, "native_libs": [], "has_native_libs": False,
+            "total_files": 0, "assets_count": 0, "is_valid_zip": False,
+            "compilation_timestamp": "",
+        }
+
+    try:
+        from analyzers.certificate_analyzer import analyze_certificate
+        certificate = analyze_certificate(apk_path)
+    except Exception as e:
+        errors.append(f"Certificate analysis failed: {e}")
+        certificate = {"found": False, "certificates": [], "is_expired": False,
+                       "is_self_signed": False, "certificate_count": 0,
+                       "certificate_files": [], "warnings": [str(e)]}
+
+    try:
+        from analyzers.manifest_analyzer import analyze_manifest
+        manifest = analyze_manifest(apk_path)
+    except Exception as e:
+        errors.append(f"Manifest analysis failed: {e}")
+        manifest = {"package_name": metadata.get("package_name", "unknown"),
+                    "permissions": [], "dangerous_permissions": [], "permission_count": 0,
+                    "activities": [], "services": [], "receivers": [], "providers": [],
+                    "exported_components": [],
+                    "flags": {"is_debuggable": False, "allows_backup": True,
+                              "network_security_config": False, "uses_cleartext_traffic": False},
+                    "warnings": [str(e)]}
+
+    try:
+        from analyzers.url_extractor import extract_urls
+        urls = extract_urls(apk_path)
+    except Exception as e:
+        errors.append(f"URL extraction failed: {e}")
+        urls = {"urls": [], "suspicious_urls": [], "ip_addresses": [],
+                "unique_domains": [], "total_count": 0, "suspicious_count": 0,
+                "warnings": [str(e)]}
+
+    try:
+        from analyzers.code_pattern_scanner import scan_code_patterns
+        code_patterns = scan_code_patterns(apk_path)
+    except Exception as e:
+        errors.append(f"Code pattern scan failed: {e}")
+        code_patterns = {"patterns": [], "high_severity_count": 0,
+                         "critical_severity_count": 0, "total_findings": 0,
+                         "categories": [], "warnings": [str(e)]}
+
+    try:
+        from analyzers.reputation import check_reputation
+        reputation = check_reputation(metadata, certificate, manifest)
+    except Exception as e:
+        errors.append(f"Reputation check failed: {e}")
+        reputation = {"package_name": metadata.get("package_name", ""),
+                      "play_store": {"listed": False, "checked": False},
+                      "mismatches": [], "findings": [], "risk_delta": 0,
+                      "reason": str(e)}
+
+    try:
+        from analyzers.verdict_engine import compute_verdict
+        verdict = compute_verdict(metadata, certificate, manifest, urls, code_patterns, reputation)
+    except Exception as e:
+        errors.append(f"Verdict computation failed: {e}")
+        verdict = {
+            "level": "SUSPICIOUS", "risk_score": 50,
+            "summary": "Analysis partially completed. Some modules encountered errors.",
+            "key_findings": [],
+            "evidence_count": {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+            "indicators": {"is_clone_candidate": False, "certificate_issue": False,
+                           "dangerous_permissions": False, "suspicious_code": False,
+                           "suspicious_network": False, "play_store_mismatch": False,
+                           "not_on_play_store": False},
+            "recommendation": "Analysis incomplete. Please try again or use the demo sample.",
+        }
+
+    response = {
+        "success": True, "filename": display_filename,
+        "metadata": metadata, "certificate": certificate, "manifest": manifest,
+        "urls": urls, "code_patterns": code_patterns,
+        "reputation": reputation, "verdict": verdict,
+    }
+    if errors:
+        response["warnings"] = errors
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -15,7 +117,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
+UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
+
+
+def _human_size(bytes_count: int) -> str:
+    if bytes_count >= 1024 * 1024 * 1024:
+        return f"{bytes_count / (1024 * 1024 * 1024):.1f}GB"
+    return f"{bytes_count / (1024 * 1024):.0f}MB"
 
 
 def get_sample_analysis():
@@ -272,7 +381,19 @@ def health_check():
 
 @app.get("/api/sample")
 def get_sample():
-    """Return a pre-built sample analysis result for demo purposes."""
+    """Run the real analyzer pipeline against the bundled WhatsApp-clone demo APK.
+
+    The demo APK is a self-signed impersonator that claims package `com.whatsapp`.
+    Running the live pipeline guarantees the result matches what a real user upload
+    would produce, including a live Play Store cross-check.
+    """
+    if os.path.exists(DEMO_APK_PATH):
+        try:
+            return JSONResponse(content=_run_pipeline(DEMO_APK_PATH, "WhatsApp_Fake_v2.22.apk"))
+        except Exception as e:
+            traceback.print_exc()
+            # Fall through to static fixture on unexpected failure
+            print(f"Demo APK pipeline failed, falling back to static sample: {e}")
     return JSONResponse(content=get_sample_analysis())
 
 
@@ -282,148 +403,28 @@ async def analyze_apk(file: UploadFile = File(...)):
     if not file.filename.lower().endswith('.apk'):
         raise HTTPException(status_code=400, detail="File must be an APK (.apk extension required)")
 
-    content = await file.read()
-
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB")
-
-    if len(content) < 100:
-        raise HTTPException(status_code=400, detail="File is too small to be a valid APK")
-
     tmp_path = None
+    total_bytes = 0
     try:
         with tempfile.NamedTemporaryFile(suffix='.apk', delete=False) as tmp:
-            tmp.write(content)
             tmp_path = tmp.name
+            while True:
+                chunk = await file.read(UPLOAD_CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_bytes += len(chunk)
+                if total_bytes > MAX_FILE_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File too large. Maximum size is {_human_size(MAX_FILE_SIZE)}",
+                    )
+                tmp.write(chunk)
+
+        if total_bytes < 100:
+            raise HTTPException(status_code=400, detail="File is too small to be a valid APK")
 
         original_filename = file.filename or "unknown.apk"
-        errors = []
-
-        metadata = {}
-        certificate = {}
-        manifest = {}
-        urls = {}
-        code_patterns = {}
-        reputation = {}
-
-        try:
-            from analyzers.metadata_extractor import extract_metadata
-            metadata = extract_metadata(tmp_path, original_filename)
-        except Exception as e:
-            errors.append(f"Metadata extraction failed: {str(e)}")
-            metadata = {
-                "filename": original_filename,
-                "file_size": len(content),
-                "file_size_human": f"{len(content) / (1024*1024):.1f} MB",
-                "hashes": {"md5": "", "sha1": "", "sha256": ""},
-                "package_name": "unknown",
-                "app_name": "Unknown",
-                "version_name": "Unknown",
-                "version_code": "Unknown",
-                "min_sdk": "Unknown",
-                "target_sdk": "Unknown",
-                "dex_count": 0,
-                "native_libs": [],
-                "has_native_libs": False,
-                "total_files": 0,
-                "assets_count": 0,
-                "is_valid_zip": False,
-                "compilation_timestamp": ""
-            }
-
-        try:
-            from analyzers.certificate_analyzer import analyze_certificate
-            certificate = analyze_certificate(tmp_path)
-        except Exception as e:
-            errors.append(f"Certificate analysis failed: {str(e)}")
-            certificate = {
-                "found": False, "certificates": [], "is_expired": False,
-                "is_self_signed": False, "certificate_count": 0,
-                "certificate_files": [], "warnings": [f"Certificate analysis error: {str(e)}"]
-            }
-
-        try:
-            from analyzers.manifest_analyzer import analyze_manifest
-            manifest = analyze_manifest(tmp_path)
-        except Exception as e:
-            errors.append(f"Manifest analysis failed: {str(e)}")
-            manifest = {
-                "package_name": metadata.get("package_name", "unknown"),
-                "version_name": "Unknown", "version_code": "Unknown",
-                "permissions": [], "dangerous_permissions": [], "permission_count": 0,
-                "activities": [], "services": [], "receivers": [],
-                "providers": [], "exported_components": [],
-                "flags": {"is_debuggable": False, "allows_backup": True, "network_security_config": False, "uses_cleartext_traffic": False},
-                "warnings": [f"Manifest analysis error: {str(e)}"]
-            }
-
-        try:
-            from analyzers.url_extractor import extract_urls
-            urls = extract_urls(tmp_path)
-        except Exception as e:
-            errors.append(f"URL extraction failed: {str(e)}")
-            urls = {"urls": [], "suspicious_urls": [], "ip_addresses": [],
-                    "unique_domains": [], "total_count": 0, "suspicious_count": 0,
-                    "warnings": [f"URL extraction error: {str(e)}"]}
-
-        try:
-            from analyzers.code_pattern_scanner import scan_code_patterns
-            code_patterns = scan_code_patterns(tmp_path)
-        except Exception as e:
-            errors.append(f"Code pattern scan failed: {str(e)}")
-            code_patterns = {"patterns": [], "high_severity_count": 0,
-                             "critical_severity_count": 0, "total_findings": 0,
-                             "categories": [], "warnings": [f"Code scan error: {str(e)}"]}
-
-        # Live Play Store reputation cross-check
-        try:
-            from analyzers.reputation import check_reputation
-            reputation = check_reputation(metadata, certificate, manifest)
-        except Exception as e:
-            errors.append(f"Reputation check failed: {str(e)}")
-            reputation = {
-                "package_name": metadata.get("package_name", ""),
-                "play_store": {"listed": False, "checked": False},
-                "mismatches": [], "findings": [], "risk_delta": 0,
-                "reason": f"Reputation check error: {str(e)}"
-            }
-
-        verdict = {}
-        try:
-            from analyzers.verdict_engine import compute_verdict
-            verdict = compute_verdict(metadata, certificate, manifest, urls, code_patterns, reputation)
-        except Exception as e:
-            errors.append(f"Verdict computation failed: {str(e)}")
-            verdict = {
-                "level": "SUSPICIOUS", "risk_score": 50,
-                "summary": "Analysis partially completed. Some modules encountered errors.",
-                "key_findings": [],
-                "evidence_count": {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
-                "indicators": {
-                    "is_clone_candidate": False, "certificate_issue": False,
-                    "dangerous_permissions": False, "suspicious_code": False,
-                    "suspicious_network": False, "play_store_mismatch": False,
-                    "not_on_play_store": False,
-                },
-                "recommendation": "Analysis incomplete. Please try again or use the demo sample."
-            }
-
-        response = {
-            "success": True,
-            "filename": original_filename,
-            "metadata": metadata,
-            "certificate": certificate,
-            "manifest": manifest,
-            "urls": urls,
-            "code_patterns": code_patterns,
-            "reputation": reputation,
-            "verdict": verdict,
-        }
-
-        if errors:
-            response["warnings"] = errors
-
-        return JSONResponse(content=response)
+        return JSONResponse(content=_run_pipeline(tmp_path, original_filename))
 
     except HTTPException:
         raise
@@ -431,6 +432,7 @@ async def analyze_apk(file: UploadFile = File(...)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
     finally:
+        await file.close()
         if tmp_path and os.path.exists(tmp_path):
             try:
                 os.unlink(tmp_path)

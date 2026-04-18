@@ -255,8 +255,6 @@ def analyze_certificate(apk_path: str) -> dict:
                         any_expired = True
         except Exception:
             try:
-                # Try simple parse
-                from datetime import datetime
                 for fmt in ["%Y-%m-%d %H:%M:%S%z", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S"]:
                     try:
                         exp_date = datetime.strptime(valid_to_str[:19], fmt[:19])

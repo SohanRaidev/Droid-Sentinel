@@ -245,6 +245,11 @@ export default function AnalysisProgress({ file }) {
                 }}
               />
             </div>
+            {progress >= 97 && (
+              <p className="text-xs ds-text-muted">
+                Finalizing analysis. Large APKs can take a few minutes.
+              </p>
+            )}
           </div>
         </div>
       </motion.div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bug, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Shield } from 'lucide-react'
+import { Bug, ChevronDown, CheckCircle2, AlertTriangle, Shield } from 'lucide-react'
 
 const SEV = {
   critical: { label: 'Critical', color: 'var(--ds-red)' },
@@ -19,11 +19,12 @@ function Pattern({ pattern, index }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
-      className="rounded-xl overflow-hidden"
+      className="rounded-xl overflow-hidden self-start h-fit"
       style={{
         border: `1px solid color-mix(in srgb, ${meta.color} 22%, var(--ds-border))`,
         borderLeft: `3px solid ${meta.color}`,
         background: 'var(--ds-surface)',
+        boxShadow: 'var(--ds-shadow-sm)',
       }}
     >
       <button
@@ -42,9 +43,11 @@ function Pattern({ pattern, index }) {
           )}
           <span className="text-sm font-semibold ds-text truncate">{pattern.name}</span>
         </div>
-        {open
-          ? <ChevronUp className="w-4 h-4 ds-text-soft flex-shrink-0 ml-2" />
-          : <ChevronDown className="w-4 h-4 ds-text-soft flex-shrink-0 ml-2" />}
+        <ChevronDown
+          className={`w-4 h-4 ds-text-soft flex-shrink-0 ml-2 transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
       </button>
 
       <AnimatePresence initial={false}>
@@ -56,7 +59,10 @@ function Pattern({ pattern, index }) {
             transition={{ duration: 0.22 }}
             className="overflow-hidden"
           >
-            <div className="px-4 py-4 ds-surface-alt space-y-3">
+            <div
+              className="px-4 py-4 ds-surface-alt space-y-3"
+              style={{ borderTop: '1px solid var(--ds-border)' }}
+            >
               <p className="text-sm ds-text-muted leading-relaxed">{pattern.description}</p>
 
               {pattern.evidence?.length > 0 && (
@@ -184,7 +190,7 @@ export default function CodePatternsCard({ codePatterns }) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
           {sorted.map((p, i) => <Pattern key={i} pattern={p} index={i} />)}
         </div>
       )}
