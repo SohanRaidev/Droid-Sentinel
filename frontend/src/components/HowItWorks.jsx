@@ -30,7 +30,7 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section id="how" className="relative py-28" style={{ background: 'var(--ds-surface)' }}>
+    <section id="how" className="relative py-20 sm:py-28 ds-perf-contain" style={{ background: 'var(--ds-surface)' }}>
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="max-w-2xl">
           <div className="ds-eyebrow">How it works</div>
@@ -91,7 +91,7 @@ export function IntelSection() {
   ]
 
   return (
-    <section id="intel" className="relative py-28">
+    <section id="intel" className="relative py-20 sm:py-28 ds-perf-contain">
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-5">

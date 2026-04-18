@@ -104,7 +104,7 @@ export default function VerdictBanner({ verdict, filename }) {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative pt-24 pb-10"
+      className="relative pt-20 sm:pt-24 pb-8 sm:pb-10"
       style={{
         background: `radial-gradient(ellipse 900px 400px at 50% 0%, ${cfg.glow}, transparent 70%)`,
       }}
@@ -176,11 +176,13 @@ export default function VerdictBanner({ verdict, filename }) {
                   {filename || 'Analysis complete'}
                 </div>
                 {isMalicious && (
-                  <motion.img
-                    src={errorImage}
-                    alt=""
-                    aria-hidden
-                    className="mt-3 w-44 h-44 object-contain pointer-events-none select-none"
+                    <motion.img
+                      src={errorImage}
+                      alt=""
+                      aria-hidden
+                      loading="lazy"
+                      decoding="async"
+                      className="mt-3 w-44 h-44 object-contain pointer-events-none select-none"
                     style={{ opacity: 0.5 }}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 0.5, scale: 1 }}

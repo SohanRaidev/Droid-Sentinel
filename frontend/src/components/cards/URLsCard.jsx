@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Globe, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
@@ -14,7 +15,11 @@ export default function URLsCard({ urls }) {
   const ips = urls.ip_addresses || []
 
   const order = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
-  const sorted = [...list].sort((a, b) => (order[a.risk_level] ?? 5) - (order[b.risk_level] ?? 5))
+  const sorted = useMemo(
+    () => [...list].sort((a, b) => (order[a.risk_level] ?? 5) - (order[b.risk_level] ?? 5)),
+    [list]
+  )
+  const shouldAnimateRows = sorted.length <= 120
 
   return (
     <motion.div
@@ -76,13 +81,13 @@ export default function URLsCard({ urls }) {
           <p className="text-xs ds-text-muted mt-1">No embedded network endpoints detected</p>
         </div>
       ) : (
-        <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+        <div className="space-y-1.5 max-h-[52vh] sm:max-h-72 overflow-y-auto pr-1">
           {sorted.map((u, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -4 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.025 }}
+              initial={shouldAnimateRows ? { opacity: 0, x: -4 } : false}
+              animate={shouldAnimateRows ? { opacity: 1, x: 0 } : undefined}
+              transition={shouldAnimateRows ? { delay: Math.min(i, 18) * 0.02 } : undefined}
               className={`p-2.5 rounded-xl sev-${u.risk_level || 'info'}`}
             >
               <div className="flex items-start gap-2">

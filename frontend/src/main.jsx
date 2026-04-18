@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MotionConfig } from 'framer-motion'
 import './index.css'
 import App from './App.jsx'
 import { ThemeProvider } from './theme.jsx'
@@ -7,7 +8,9 @@ import { ThemeProvider } from './theme.jsx'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>
-      <App />
+      <MotionConfig reducedMotion="user">
+        <App />
+      </MotionConfig>
     </ThemeProvider>
   </StrictMode>,
 )

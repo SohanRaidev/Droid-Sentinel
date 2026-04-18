@@ -71,7 +71,7 @@ const fadeUp = {
 
 export default function Features() {
   return (
-    <section id="features" className="relative py-28">
+    <section id="features" className="relative py-20 sm:py-28 ds-perf-contain">
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="max-w-3xl">
           <motion.div

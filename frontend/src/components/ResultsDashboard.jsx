@@ -96,7 +96,7 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
   const hasReputation = !!reputation && !!reputation.play_store
 
   return (
-    <div ref={ref} className="max-w-7xl mx-auto px-5 sm:px-8 py-10 ds-report-root">
+    <div ref={ref} className="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-10 ds-report-root ds-perf-contain">
       {/* Print-only header */}
       <PrintHeader data={data} verdict={verdict} />
 
@@ -126,13 +126,13 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {onExport && (
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
               onClick={onExport}
-              className="ds-btn-ghost text-sm h-10 px-4 inline-flex items-center gap-2"
+              className="ds-btn-ghost text-sm h-10 px-4 inline-flex items-center gap-2 flex-1 sm:flex-none justify-center"
               title="Export detailed report"
             >
               <FileText className="w-4 h-4" />
@@ -143,7 +143,7 @@ const ResultsDashboard = forwardRef(function ResultsDashboard(
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             onClick={onReset}
-            className="ds-btn-primary text-sm h-10 px-4 inline-flex items-center gap-2"
+            className="ds-btn-primary text-sm h-10 px-4 inline-flex items-center gap-2 flex-1 sm:flex-none justify-center"
           >
             <RefreshCw className="w-4 h-4" />
             Scan another APK

@@ -42,13 +42,19 @@ export default function Navbar({ onReset, phase, onAnalyze, onExport }) {
         borderBottom: scrolled ? '1px solid var(--ds-border)' : '1px solid transparent',
       }}
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-24 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 sm:h-24 flex items-center justify-between gap-2 sm:gap-4">
         <button
           onClick={onReset}
           className="flex items-center group"
           aria-label="Droid Sentinel home"
         >
-          <img src="/logo.png" alt="Droid Sentinel" className="w-40 h-40 object-contain" />
+          <img
+            src="/logo.png"
+            alt="Droid Sentinel"
+            loading="eager"
+            decoding="async"
+            className="w-24 h-24 sm:w-40 sm:h-40 object-contain"
+          />
         </button>
 
         {phase === 'upload' && (
@@ -111,9 +117,9 @@ export default function Navbar({ onReset, phase, onAnalyze, onExport }) {
 
           <button
             onClick={onAnalyze || onReset}
-            className="ds-btn-primary text-sm h-9 px-5 flex items-center"
+            className="ds-btn-primary text-xs sm:text-sm h-9 px-3 sm:px-5 flex items-center whitespace-nowrap"
           >
-            {phase === 'results' ? 'Analyze another' : 'Analyze APK'}
+            {phase === 'results' ? 'Analyze again' : 'Analyze APK'}
           </button>
         </div>
       </div>

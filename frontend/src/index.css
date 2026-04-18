@@ -83,6 +83,11 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.ds-perf-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
+}
+
 /* -------------------------------------------------------------------------
    Scrollbar
    ------------------------------------------------------------------------- */
@@ -481,3 +486,22 @@ body {
 
 /* Remove tap highlight on mobile */
 * { -webkit-tap-highlight-color: transparent; }
+
+@media (max-width: 640px) {
+  .ds-card {
+    border-radius: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

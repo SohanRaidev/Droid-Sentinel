@@ -1,12 +1,12 @@
-import { useEffect, useRef, useMemo } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useEffect, useRef, useMemo, useState } from 'react'
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion'
 import { ShieldCheck, Radar, Zap, ArrowRight } from 'lucide-react'
 import { useTheme } from '../theme.jsx'
 import androidGuyBlack from '../../../androidguyblack.png'
 import androidGuyWhite from '../../../androidguywhite.png'
 
-function FloatingParticles() {
-  const particles = useMemo(() => Array.from({ length: 18 }, (_, i) => ({
+function FloatingParticles({ compact = false }) {
+  const particles = useMemo(() => Array.from({ length: compact ? 8 : 18 }, (_, i) => ({
     id: i,
     x: 5 + Math.random() * 90,
     y: 5 + Math.random() * 90,
@@ -86,6 +86,8 @@ const stagger = {
 export default function Hero({ onPrimaryClick, onSecondaryClick }) {
   const { theme } = useTheme()
   const heroArt = theme === 'dark' ? androidGuyWhite : androidGuyBlack
+  const reduceMotion = useReducedMotion()
+  const [isCompact, setIsCompact] = useState(false)
 
   // Mouse parallax for the hero art
   const mx = useMotionValue(0)
@@ -99,6 +101,15 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
 
   const sectionRef = useRef(null)
   useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px), (pointer: coarse)')
+    const syncCompact = () => setIsCompact(media.matches)
+    syncCompact()
+    media.addEventListener('change', syncCompact)
+    return () => media.removeEventListener('change', syncCompact)
+  }, [])
+
+  useEffect(() => {
+    if (reduceMotion || isCompact) return
     const el = sectionRef.current
     if (!el) return
     const onMove = (e) => {
@@ -113,7 +124,7 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
       el.removeEventListener('mousemove', onMove)
       el.removeEventListener('mouseleave', onLeave)
     }
-  }, [mx, my])
+  }, [mx, my, reduceMotion, isCompact])
 
   return (
     <section
@@ -125,37 +136,46 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
         aria-hidden
         className="absolute inset-0 ds-grid-bg pointer-events-none opacity-60"
       />
-      <FloatingParticles />
-      <RadarRings />
+      {!reduceMotion && <FloatingParticles compact={isCompact} />}
+      {!reduceMotion && !isCompact && <RadarRings />}
 
       {/* Ambient orbital glow — reacts to mouse */}
-      <motion.div
-        aria-hidden
-        className="absolute left-1/2 top-1/3 pointer-events-none"
-        style={{
-          x: blobX,
-          y: blobY,
-          translateX: '-50%',
-          translateY: '-50%',
-          width: '60rem',
-          height: '60rem',
-          background:
-            'radial-gradient(circle at center, color-mix(in srgb, var(--ds-accent) 22%, transparent), transparent 60%)',
-          filter: 'blur(60px)',
-          opacity: 0.55,
-        }}
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-      />
+      {!reduceMotion && (
+        <motion.div
+          aria-hidden
+          className="absolute left-1/2 top-1/3 pointer-events-none"
+          style={{
+            x: isCompact ? 0 : blobX,
+            y: isCompact ? 0 : blobY,
+            translateX: '-50%',
+            translateY: '-50%',
+            width: isCompact ? '38rem' : '60rem',
+            height: isCompact ? '38rem' : '60rem',
+            background:
+              'radial-gradient(circle at center, color-mix(in srgb, var(--ds-accent) 22%, transparent), transparent 60%)',
+            filter: 'blur(60px)',
+            opacity: 0.55,
+          }}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
 
       <motion.img
         src={heroArt}
         alt=""
         aria-hidden
+        loading="eager"
+        decoding="async"
         className="absolute right-[-8rem] top-1/2 w-[min(62vw,900px)] max-w-none pointer-events-none select-none"
-        style={{ opacity: 0.08, x: artX, y: artY, translateY: '-50%' }}
-        animate={{ rotate: [0, 1.2, 0, -1.2, 0] }}
-        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          opacity: isCompact ? 0.06 : 0.08,
+          x: (reduceMotion || isCompact) ? 0 : artX,
+          y: (reduceMotion || isCompact) ? 0 : artY,
+          translateY: '-50%',
+        }}
+        animate={reduceMotion || isCompact ? undefined : { rotate: [0, 1.2, 0, -1.2, 0] }}
+        transition={reduceMotion || isCompact ? undefined : { duration: 14, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
@@ -177,7 +197,7 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
                 style={{ background: 'var(--ds-green)' }}
               />
             </span>
-            Live Play Store cross-verification now generally available
+            Real-time clone detection — now verified against Google Play
           </motion.div>
 
           <motion.h1
@@ -253,13 +273,13 @@ export default function Hero({ onPrimaryClick, onSecondaryClick }) {
           </motion.div>
         </motion.div>
 
-        <HeroPreview parallaxX={sx} parallaxY={sy} />
+        <HeroPreview parallaxX={sx} parallaxY={sy} reduceMotion={reduceMotion || isCompact} />
       </div>
     </section>
   )
 }
 
-function HeroPreview({ parallaxX, parallaxY }) {
+function HeroPreview({ parallaxX, parallaxY, reduceMotion }) {
   const tiltX = useTransform(parallaxY, (v) => v * -3)
   const tiltY = useTransform(parallaxX, (v) => v * 3)
 
@@ -277,11 +297,11 @@ function HeroPreview({ parallaxX, parallaxY }) {
         className="ds-card p-5 sm:p-7 relative"
         style={{
           borderRadius: '28px',
-          rotateX: tiltX,
-          rotateY: tiltY,
+          rotateX: reduceMotion ? 0 : tiltX,
+          rotateY: reduceMotion ? 0 : tiltY,
           transformStyle: 'preserve-3d',
         }}
-        whileHover={{ scale: 1.008 }}
+        whileHover={reduceMotion ? undefined : { scale: 1.008 }}
         transition={{ type: 'spring', stiffness: 80, damping: 16 }}
       >
         <div className="flex items-center gap-2 mb-5">

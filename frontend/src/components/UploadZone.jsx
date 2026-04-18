@@ -45,7 +45,7 @@ export default function UploadZone({ onUpload, onDemo, error }) {
     <div className="relative">
       <Hero onPrimaryClick={focusUploader} onSecondaryClick={onDemo} />
 
-      <section id="upload" ref={dropRef} className="relative py-20">
+      <section id="upload" ref={dropRef} className="relative py-14 sm:py-20 ds-perf-contain">
         <div className="max-w-3xl mx-auto px-5 sm:px-8">
           <div className="text-center mb-10">
             <div className="ds-eyebrow">Start a scan</div>
@@ -95,7 +95,7 @@ export default function UploadZone({ onUpload, onDemo, error }) {
                 </div>
               )}
 
-              <div className="p-10 sm:p-14 flex flex-col items-center text-center">
+                <div className="p-6 sm:p-14 flex flex-col items-center text-center">
                 <motion.div
                   animate={{ scale: isDragging ? 1.06 : 1 }}
                   transition={{ type: 'spring', stiffness: 200, damping: 16 }}
